@@ -1,0 +1,12 @@
+{
+  "name": "controle-ferramentas-mirandolli-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interface do controle de ferramentas",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node --check src/main.js"
+  }
+}
