@@ -46,9 +46,11 @@ export function renderizarCartoesDeFerramentas(ferramentas) {
           <div class="tool-details">${detalhesDaFerramenta(ferramenta)}</div>
           <div class="tool-card-footer">
             <p class="tool-value">${formatarValor(ferramenta.valor)}</p>
-            <button class="edit-button" data-id="${ferramenta.id}" type="button">
-              Editar
-            </button>
+            <div class="tool-actions">
+              <button class="history-button" data-id="${ferramenta.id}" type="button">Historico</button>
+              <button class="edit-button" data-id="${ferramenta.id}" type="button">Editar</button>
+              <button class="delete-button" data-id="${ferramenta.id}" type="button">Excluir</button>
+            </div>
           </div>
         </article>
       `

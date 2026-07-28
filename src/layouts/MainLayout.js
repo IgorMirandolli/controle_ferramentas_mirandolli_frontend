@@ -1,4 +1,7 @@
 import { renderizarResumoDeStatus } from '../components/StatusSummary.js';
+import { renderizarConfirmacaoDeExclusao } from '../components/DeleteConfirm.js';
+import { renderizarAreaDosGraficos } from '../components/DashboardCharts.js';
+import { renderizarDialogoDeHistorico } from '../components/MovementHistory.js';
 import { renderizarFormularioDeFerramenta } from '../components/ToolForm.js';
 
 export function renderizarLayoutPrincipal() {
@@ -22,6 +25,7 @@ export function renderizarLayoutPrincipal() {
         <p class="last-update" id="last-update">Carregando informacoes...</p>
       </section>
       ${renderizarResumoDeStatus()}
+      ${renderizarAreaDosGraficos()}
       <section class="inventory" aria-labelledby="inventory-title">
         <div class="inventory-heading">
           <div><p class="eyebrow">Inventario</p><h2 id="inventory-title">Ferramentas cadastradas</h2></div>
@@ -45,6 +49,8 @@ export function renderizarLayoutPrincipal() {
       </section>
     </main>
     ${renderizarFormularioDeFerramenta()}
+    ${renderizarConfirmacaoDeExclusao()}
+    ${renderizarDialogoDeHistorico()}
     <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
   `;
 }

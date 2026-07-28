@@ -20,6 +20,18 @@ export function formatarDataDeAtualizacao() {
   }).format(new Date());
 }
 
+export function formatarDia(data) {
+  const [, mes, dia] = data.split('-');
+  return `${dia}/${mes}`;
+}
+
+export function formatarDataEHora(data) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(data));
+}
+
 export function textoSeguro(valor) {
   const elemento = document.createElement('span');
   elemento.textContent = valor || '';

@@ -1,4 +1,8 @@
-import { listarFerramentas, salvarFerramenta } from '../boot/api.js';
+import {
+  excluirFerramenta,
+  listarFerramentas,
+  salvarFerramenta,
+} from '../boot/api.js';
 
 export function useFerramentas() {
   let ferramentas = [];
@@ -13,8 +17,14 @@ export function useFerramentas() {
     return carregar();
   }
 
+  async function excluir(id) {
+    await excluirFerramenta(id);
+    return carregar();
+  }
+
   return {
     carregar,
+    excluir,
     salvar,
     todas: () => ferramentas,
   };

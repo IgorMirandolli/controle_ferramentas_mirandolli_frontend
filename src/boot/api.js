@@ -25,3 +25,17 @@ export function salvarFerramenta(dados, id = null) {
     body: JSON.stringify(dados),
   });
 }
+
+export function excluirFerramenta(id) {
+  return requisitar(`/ferramentas/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function listarMovimentacoesDaFerramenta(id) {
+  return requisitar(`/ferramentas/${id}/movimentacoes`);
+}
+
+export function buscarResumoDoDashboard() {
+  return requisitar('/relatorios/dashboard');
+}

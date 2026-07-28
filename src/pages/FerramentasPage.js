@@ -1,14 +1,23 @@
 import { useFerramentas } from '../composables/useFerramentas.js';
+import {
+  buscarResumoDoDashboard,
+  listarMovimentacoesDaFerramenta,
+} from '../boot/api.js';
+import { renderizarGraficosDoDashboard } from '../components/DashboardCharts.js';
+import { renderizarListaDeMovimentacoes } from '../components/MovementHistory.js';
 import { renderizarCartoesDeFerramentas } from '../components/ToolCard.js';
 import { formatarDataDeAtualizacao } from '../util/formatadores.js';
 
 export function iniciarPaginaDeFerramentas() {
   const ferramentasStore = useFerramentas();
   let feedbackTimeout;
+  let ferramentaParaExcluir = null;
 
   const elements = {
     container: document.querySelector('#tools-container'),
     dialog: document.querySelector('#tool-dialog'),
+    deleteDialog: document.querySelector('#delete-dialog'),
+    historyDialog: document.querySelector('#history-dialog'),
     form: document.querySelector('#tool-form'),
     toolId: document.querySelector('#tool-id'),
     dialogTitle: document.querySelector('#dialog-title'),
@@ -27,6 +36,13 @@ export function iniciarPaginaDeFerramentas() {
     feedback: document.querySelector('#feedback'),
     lastUpdate: document.querySelector('#last-update'),
     saveButton: document.querySelector('#save-tool-button'),
+    deleteToolName: document.querySelector('#delete-tool-name'),
+    cancelDeleteButton: document.querySelector('#cancel-delete-button'),
+    confirmDeleteButton: document.querySelector('#confirm-delete-button'),
+    dashboardContainer: document.querySelector('#dashboard-container'),
+    historyTitle: document.querySelector('#history-dialog-title'),
+    historyContainer: document.querySelector('#history-container'),
+    closeHistoryButton: document.querySelector('#close-history-button'),
   };
 
   function ferramentasFiltradas() {
@@ -126,12 +142,71 @@ export function iniciarPaginaDeFerramentas() {
     }, 4200);
   }
 
+  function abrirDialogoDeExclusao(ferramenta) {
+    ferramentaParaExcluir = ferramenta;
+    elements.deleteToolName.textContent = ferramenta.nome;
+    elements.deleteDialog.showModal();
+  }
+
+  async function abrirHistorico(ferramenta) {
+    elements.historyTitle.textContent = ferramenta.nome;
+    elements.historyContainer.innerHTML = '<p class="loading-message">Carregando historico...</p>';
+    elements.historyDialog.showModal();
+
+    try {
+      const movimentacoes = await listarMovimentacoesDaFerramenta(ferramenta.id);
+      elements.historyContainer.innerHTML = renderizarListaDeMovimentacoes(
+        movimentacoes
+      );
+    } catch (erro) {
+      elements.historyContainer.innerHTML = `<p class="chart-empty">${erro.message}</p>`;
+    }
+  }
+
+  async function carregarDashboard() {
+    try {
+      const resumo = await buscarResumoDoDashboard();
+      elements.dashboardContainer.innerHTML = renderizarGraficosDoDashboard(resumo);
+    } catch (_erro) {
+      elements.dashboardContainer.innerHTML = `
+        <div class="chart-panel chart-error">
+          <strong>Nao foi possivel carregar os graficos.</strong>
+          <span>Tente atualizar a pagina.</span>
+        </div>
+      `;
+    }
+  }
+
+  async function excluirFerramenta() {
+    if (!ferramentaParaExcluir) return;
+
+    const ferramenta = ferramentaParaExcluir;
+    elements.confirmDeleteButton.disabled = true;
+    elements.confirmDeleteButton.textContent = 'Excluindo...';
+
+    try {
+      await ferramentasStore.excluir(ferramenta.id);
+      elements.deleteDialog.close();
+      mostrarFeedback('Ferramenta excluida com sucesso.');
+      renderizarResumo();
+      renderizarFerramentas();
+      await carregarDashboard();
+      elements.lastUpdate.textContent = `Atualizado em ${formatarDataDeAtualizacao()}`;
+    } catch (erro) {
+      mostrarFeedback(erro.message, 'erro');
+    } finally {
+      elements.confirmDeleteButton.disabled = false;
+      elements.confirmDeleteButton.textContent = 'Excluir ferramenta';
+    }
+  }
+
   async function carregarFerramentas() {
     elements.container.innerHTML = '<p class="loading-message">Carregando ferramentas...</p>';
     try {
       await ferramentasStore.carregar();
       renderizarResumo();
       renderizarFerramentas();
+      await carregarDashboard();
       elements.lastUpdate.textContent = `Atualizado em ${formatarDataDeAtualizacao()}`;
     } catch (_erro) {
       elements.container.innerHTML = `
@@ -174,6 +249,7 @@ export function iniciarPaginaDeFerramentas() {
       );
       renderizarResumo();
       renderizarFerramentas();
+      await carregarDashboard();
       elements.lastUpdate.textContent = `Atualizado em ${formatarDataDeAtualizacao()}`;
     } catch (erro) {
       mostrarFeedback(erro.message, 'erro');
@@ -186,6 +262,12 @@ export function iniciarPaginaDeFerramentas() {
   elements.newToolButton.addEventListener('click', () => abrirDialogo());
   elements.closeDialogButton.addEventListener('click', () => elements.dialog.close());
   elements.cancelDialogButton.addEventListener('click', () => elements.dialog.close());
+  elements.cancelDeleteButton.addEventListener('click', () => elements.deleteDialog.close());
+  elements.confirmDeleteButton.addEventListener('click', excluirFerramenta);
+  elements.deleteDialog.addEventListener('close', () => {
+    ferramentaParaExcluir = null;
+  });
+  elements.closeHistoryButton.addEventListener('click', () => elements.historyDialog.close());
   elements.statusInput.addEventListener('change', atualizarCamposCondicionais);
   elements.form.addEventListener('submit', salvarFerramenta);
   elements.searchInput.addEventListener('input', renderizarFerramentas);
@@ -203,12 +285,24 @@ export function iniciarPaginaDeFerramentas() {
   });
 
   elements.container.addEventListener('click', (evento) => {
-    const botao = evento.target.closest('.edit-button');
+    const botao = evento.target.closest('.history-button, .edit-button, .delete-button');
     if (!botao) return;
     const ferramenta = ferramentasStore
       .todas()
       .find((item) => item.id === Number(botao.dataset.id));
-    if (ferramenta) abrirDialogo(ferramenta);
+    if (!ferramenta) return;
+
+    if (botao.classList.contains('history-button')) {
+      abrirHistorico(ferramenta);
+      return;
+    }
+
+    if (botao.classList.contains('edit-button')) {
+      abrirDialogo(ferramenta);
+      return;
+    }
+
+    abrirDialogoDeExclusao(ferramenta);
   });
 
   carregarFerramentas();
